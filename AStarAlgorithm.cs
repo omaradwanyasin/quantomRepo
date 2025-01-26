@@ -5,7 +5,9 @@ using backend_api.Models;
 
 public class AStarPathfinder
 {
-    
+
+    private Random _random = new Random();
+
     public List<int> FindPath(Dictionary<int, Node> nodesMap, int startNodeId, int targetNodeId)
     {
         var path = new List<int>();
@@ -31,7 +33,8 @@ public class AStarPathfinder
 
         while (openSet.Count > 0)
         {
-            var current = openSet.Dequeue();
+            // Quantum-inspired selection
+            var current = QuantumNodeSelection(openSet, nodesMap, targetNode);
 
             if (current.NodeId == targetNodeId)
                 return ReconstructPath(cameFrom, current.NodeId);
@@ -55,7 +58,42 @@ public class AStarPathfinder
             }
         }
 
-        return path; // Return empty path if no route found
+        return path;
+    }
+    private Node QuantumNodeSelection(PriorityQueue<Node, double> openSet,
+                                    Dictionary<int, Node> nodesMap,
+                                    Node targetNode)
+    {
+        // Quantum-inspired probability distribution
+        var nodes = openSet.UnorderedItems.Select(x => x.Element).ToList();
+        var probabilities = CalculateQuantumProbabilities(nodes, targetNode);
+
+        // Select node based on quantum probability distribution
+        double randomValue = _random.NextDouble();
+        double cumulative = 0.0;
+
+        for (int i = 0; i < nodes.Count; i++)
+        {
+            cumulative += probabilities[i];
+            if (randomValue <= cumulative)
+            {
+                return nodes[i];
+            }
+        }
+
+        return nodes.Last();
+    }
+
+    private double[] CalculateQuantumProbabilities(List<Node> nodes, Node targetNode)
+    {
+        // Quantum-inspired amplitude calculation using Hamiltonian energy
+        var energies = nodes.Select(n =>
+            1 / (CalculateHeuristic(n, targetNode) + 0.0001) // Avoid division by zero
+        ).ToArray();
+
+        // Create probability amplitudes
+        var totalEnergy = energies.Sum();
+        return energies.Select(e => e / totalEnergy).ToArray();
     }
 
     private List<int> ReconstructPath(Dictionary<int, int> cameFrom, int currentNodeId)

@@ -30,14 +30,17 @@ namespace backend_api.Controllers
         [HttpGet("getPointsAll")]
         public async Task<IActionResult> CheckAreaStatuses()
         {
-             await _mongoDbService.CheckAreaStatusesAsync();
+            await _mongoDbService.CheckAreaStatusesAsync();
             var pathfinder = new AStarPathfinder();
             var path = pathfinder.FindPath(MongoDbService.nodesMap, 1, 801);
-            foreach(var item in path)
+            var coordinates = new List<double[]>();
+            foreach (var item in path)
             {
-                Console.WriteLine(item);
+                var x = MongoDbService.nodesMap[item].X;
+                var y = MongoDbService.nodesMap[item].Y;
+                coordinates.Add(new double[] { x, y });
             }
-            return  Ok("Area status check completed.");
+            return Ok(coordinates);
         }
     }
 }
