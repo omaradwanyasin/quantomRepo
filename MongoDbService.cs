@@ -1,4 +1,5 @@
 ﻿using backend_api.Models;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using System.Collections.Generic;
@@ -10,15 +11,17 @@ namespace backend_api.Services
     {
         private readonly IMongoCollection<Node> _nodesCollection;
         private readonly IMongoCollection<Area> _areaCollection;
+        private readonly IHubContext<UpdateHub> _hubContext;
 
         // Static dictionary to store nodes mapped by AreaId
         public static Dictionary<int, Node> nodesMap = new Dictionary<int, Node>();
 
-        public MongoDbService(IOptions<MongoDbSettings> mongoDbSettings, IMongoClient mongoClient)
+        public MongoDbService(IOptions<MongoDbSettings> mongoDbSettings, IMongoClient mongoClient, IHubContext<UpdateHub> hubContext)
         {
             var database = mongoClient.GetDatabase(mongoDbSettings.Value.DatabaseName);
             _nodesCollection = database.GetCollection<Node>(mongoDbSettings.Value.NodesCollection);
             _areaCollection = database.GetCollection<Area>(mongoDbSettings.Value.AreaCollection);
+            _hubContext = hubContext;
         }
 
         // Function to get nodes by AreaId
@@ -72,5 +75,23 @@ namespace backend_api.Services
             }
 
         }
+        //any change to this will call console and pritn 
+        public async Task WatchCollection(CancellationToken cancellationToken)
+        {
+            using var cursor = await _areaCollection.WatchAsync(cancellationToken: cancellationToken);
+
+            while (await cursor.MoveNextAsync(cancellationToken))
+            {
+                foreach (var change in cursor.Current)
+                {
+                    Console.WriteLine("🔄 Change detected in Nodes Collection: " + change.FullDocument);
+
+                    // Notify Frontend via SignalR
+                    await _hubContext.Clients.All.SendAsync("ReceiveUpdate", change.FullDocument);
+                }
+            }
+        }
+
+
     }
 }

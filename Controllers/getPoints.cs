@@ -42,5 +42,10 @@ namespace backend_api.Controllers
             }
             return Ok(coordinates);
         }
+        [HttpGet("signalr-test")]
+        public IActionResult TestSignalRConnection()
+        {
+            return Ok("SignalR endpoint is active");
+        }
     }
 }
